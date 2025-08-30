@@ -1,0 +1,5 @@
+.lite_project.lua
+*.o
+*.exe
+*.asm
+__pycache__
