@@ -62,6 +62,16 @@ class Parser:
         if tok is None:
             ZapError("Unexpected end of input in factor")
 
+        # Handle unary operators: * (dereference) and & (address-of)
+        if tok.value == '*':
+            self.consume()
+            expr = self.p_factor()
+            return AST('dereference', expr=expr)
+        elif tok.value == '&':
+            self.consume()
+            expr = self.p_factor()
+            return AST('address_of', expr=expr)
+
         if tok.type in ('Number', 'Identifier', 'Character'):
             self.consume()
             if tok.type == 'Identifier' and self.peek() and self.peek().value == '[':
@@ -126,6 +136,25 @@ class Parser:
             self.expect("{")
             body = self.p_list(self.p_stmt, None, "}")
             return AST("if", cond=cond, body=body)
+        # Handle dereferenced assignment like *ptr = value BEFORE identifier check
+        elif self.peek() and self.peek().value == "*":
+            # Check if this is a dereferenced assignment by looking ahead
+            saved_pos = self.pos
+            self.consume()  # consume '*'
+            if self.peek() and self.peek().type == "Identifier":
+                # Look ahead to see if there's an '=' after the identifier
+                identifier_pos = self.pos
+                self.consume()  # consume identifier
+                if self.peek() and self.peek().value == "=":
+                    # This is a dereferenced assignment: *ptr = value
+                    self.pos = saved_pos  # Reset position
+                    self.consume()  # consume '*'
+                    target = self.p_factor()  # Get what we're dereferencing
+                    self.expect('=')
+                    value = self.p_expr()
+                    return AST("deref_assign", target=target, value=value)
+            # Not a dereferenced assignment, reset and fall through
+            self.pos = saved_pos
         elif self.peek() and self.peek().type == "Identifier":
             if self.peek(1) and self.peek(1).value == "(":
                 name = self.consume().value
@@ -149,7 +178,6 @@ class Parser:
                 self.expect('=')
                 value = self.p_expr()
                 return AST("assign_existing", name=name, value=value)
-
 
         # fallback: just an expression
         return self.p_expr()
@@ -181,4 +209,3 @@ class Parser:
 if __name__ == "__main__":
     p = Parser(input(">> "))
     print(p.p_prog())
-

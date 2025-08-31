@@ -9,9 +9,9 @@ TokenRegexes = [
     ("Number", r"\d+(\.\d+)?"), #"
     ("Character", r"'.'"),
     ("StringLiteral", r"\".*\""),
-    ("Ignore", r"[ \t\n]+"),
+    ("Ignore", r"[ \t\n;]+"),
     ("Comparison", r"==|!="),
-    ("Assignment", r"\+|\-|\*|/|\="),
+    ("Assignment", r"\+|\-|\*|/|\=|\&"),
     ("Symbol", r"\(|\)|\{|\}|\[|\]|\,|\.|\:|\&|\||\^|\~|\<|\>"),
     ("Unknown", '.')
 ]
